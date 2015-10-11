@@ -184,6 +184,7 @@ class TestCase(object):
         """Actually run the tests."""
         try:
             self.setup()
+            update_status(self.pr, state=self.state)
             self.run_tests()
             self.state = 'success'
         except:

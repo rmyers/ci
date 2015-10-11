@@ -118,6 +118,8 @@ def update_status(pr, state, job_name=JOB_NAME, build_url=BUILD_URL):
 
 class TestCase(object):
 
+    template = 'test_case.xml'
+
     def __init__(self, name, test_cmd):
         self.name = name
         self.test_cmd = test_cmd
@@ -170,7 +172,11 @@ class TestCase(object):
             'python': TROVE_PYTHON,
             'bin': TROVE_BIN,
             'workspace': WORKSPACE,
-            'fab_args': 'tests:stop=True,white_box=True,with_xunit=True'
+            'fab_args': 'tests:stop=True,white_box=True,with_xunit=True',
+            'mysql_56': 'datastore=mysql,version=5.6',
+            'mysql_51': 'datastore=mysql,version=5.1',
+            'mariadb': 'datastore=mariadb,version=10',
+            'percona': 'datastore=percona,version=5.6',
         }
         check_call(self.test_cmd, **args)
 
@@ -189,6 +195,8 @@ class TestCase(object):
 
 
 class VMTestCase(TestCase):
+
+    template = 'vm_test_case.xml'
 
     def clean(self):
         super(VMTestCase, self).clean()
@@ -210,6 +218,8 @@ class VMTestCase(TestCase):
 
 class PullRunner(TestCase):
 
+    template = 'pull_runner.xml'
+
     def __init__(self, tests):
         self.name = 'PR_Run'
         self.tests = tests
@@ -230,9 +240,27 @@ TESTS = [
     TestCase(
         'X-QuickTests',
         'tox -ecover -- --xunit-file={workspace}/output/tests.xml'),
+    TestCase(
+        'X-Docs',
+        'tox -edocs -- --xunit-file={workspace}/output/tests.xml'),
+    TestCase(
+        'X-Pep8',
+        'tox -epep8'),
+    TestCase(
+        'X-Usage',
+        'tox -eusage -- --xunit-file={workspace}/output/tests.xml'),
     VMTestCase(
         'X-MySQL-56',
-        '{fab} {fab_args},group=rax_stable'),
+        '{fab} {fab_args},{mysql_56},group=rax_stable'),
+    VMTestCase(
+        'X-MySQL-51',
+        '{fab} {fab_args},{mysql_51},group=rax_stable'),
+    VMTestCase(
+        'X-Mariadb',
+        '{fab} {fab_args},{mariadb},group=rax_stable'),
+    VMTestCase(
+        'X-Percona',
+        '{fab} {fab_args},{percona},group=rax_stable'),
 ]
 
 

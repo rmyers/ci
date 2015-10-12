@@ -178,7 +178,7 @@ class TestCase(object):
             'mysql_51': 'datastore=mysql,version=5.1',
             'mariadb': 'datastore=mariadb,version=10',
             'percona': 'datastore=percona,version=5.6',
-            'default_groups': 'group=rax_stable|rax_replication_groups'
+            'default_groups': 'group="rax_stable|rax_replication_groups"'
         }
         check_call(self.test_cmd, **args)
 

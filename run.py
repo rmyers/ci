@@ -178,6 +178,7 @@ class TestCase(object):
             'mysql_51': 'datastore=mysql,version=5.1',
             'mariadb': 'datastore=mariadb,version=10',
             'percona': 'datastore=percona,version=5.6',
+            'default_groups': 'group=rax_stable|rax_replication_groups'
         }
         check_call(self.test_cmd, **args)
 
@@ -211,8 +212,8 @@ class VMTestCase(TestCase):
 
     def setup(self):
         super(VMTestCase, self).setup()
-        check_call('sudo rm -rf /Cloud-database')
-        check_call('sudo ln -s {work} /Cloud-database', work=WORKSPACE)
+        check_call('sudo rm -rf /Cloud-Database')
+        check_call('sudo ln -s {work} /Cloud-Database', work=WORKSPACE)
         with cd(WORKSPACE):
             check_call('sudo {p} install -e internal/cdb-utils', p=TROVE_PIP)
         check_call('/usr/local/bin/refresh-puppet')
@@ -251,19 +252,20 @@ TESTS = [
         xunit=False),
     TestCase(
         'X-Usage',
-        'tox -eusage -- --xunit-file={workspace}/output/tests.xml'),
+        'tox -eusage',
+        xunit=False),
     VMTestCase(
         'X-MySQL-56',
-        '{fab} {fab_args},{mysql_56},group=rax_stable'),
+        '{fab} {fab_args},{mysql_56},{default_groups}'),
     VMTestCase(
         'X-MySQL-51',
-        '{fab} {fab_args},{mysql_51},group=rax_stable'),
+        '{fab} {fab_args},{mysql_51},{default_groups}'),
     VMTestCase(
         'X-Mariadb',
-        '{fab} {fab_args},{mariadb},group=rax_stable'),
+        '{fab} {fab_args},{mariadb},{default_groups}'),
     VMTestCase(
         'X-Percona',
-        '{fab} {fab_args},{percona},group=rax_stable'),
+        '{fab} {fab_args},{percona},{default_groups}'),
 ]
 
 

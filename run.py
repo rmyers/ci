@@ -120,10 +120,11 @@ class TestCase(object):
 
     template = 'test_case.xml'
 
-    def __init__(self, name, test_cmd):
+    def __init__(self, name, test_cmd, xunit=True):
         self.name = name
         self.test_cmd = test_cmd
         self.pr = None
+        self.xunit = xunit
         self.state = 'pending'
 
     def fetch_pr(self, repo=REPO, number=PR_NUMBER):
@@ -246,7 +247,8 @@ TESTS = [
         'tox -edocs -- --xunit-file={workspace}/output/tests.xml'),
     TestCase(
         'X-Pep8',
-        'tox -epep8'),
+        'tox -epep8',
+        xunit=False),
     TestCase(
         'X-Usage',
         'tox -eusage -- --xunit-file={workspace}/output/tests.xml'),

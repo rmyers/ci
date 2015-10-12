@@ -63,11 +63,15 @@ def reconfig(args):
     tests = TESTS + [PullRunner(TESTS)]
     for test in tests:
         template = ENV.get_template(test.template)
-        config = template.render(**context)
-        try:
-            conn.reconfig_job(test.name, config)
-        except:
-            conn.create_job(test.name, config)
+        config = template.render(test=test, **context)
+        if args.dry:
+            with open(config_filename(test.name), 'w') as conf:
+                conf.write(config)
+        else:
+            try:
+                conn.reconfig_job(test.name, config)
+            except:
+                conn.create_job(test.name, config)
 
 
 class JenkinsConnection(object):
@@ -108,6 +112,9 @@ def main():
     parser_reconfig.add_argument(
         '--token', default=os.environ.get('GITHUB_TOKEN'),
         help='github api token defaults to $GITHUB_TOKEN')
+    parser_reconfig.add_argument(
+        '--dry', action='store_true',
+        help='Just print out the files.')
     parser_reconfig.set_defaults(func=reconfig)
 
     args = parser.parse_args()

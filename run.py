@@ -259,7 +259,7 @@ TESTS = [
         '{fab} {fab_args},{mysql_56},{default_groups}'),
     VMTestCase(
         'X-MySQL-51',
-        '{fab} {fab_args},{mysql_51},{default_groups}'),
+        '{fab} {fab_args},{mysql_51},group="rax_stable"'),
     VMTestCase(
         'X-Mariadb',
         '{fab} {fab_args},{mariadb},{default_groups}'),

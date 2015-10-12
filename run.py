@@ -59,6 +59,15 @@ SUBMODULES = [
     'lib/private/secrets',
 ]
 
+# Log file locations
+LOGS = [
+    '/var/log/trove',
+    '/var/log/nova',
+    '/var/log/cinder',
+    '/var/log/cdbproxy',
+    '/var/log/cdbproxy-endpoint',
+]
+
 
 class cd(object):
     """Run commands in a different directory."""
@@ -201,8 +210,30 @@ class VMTestCase(TestCase):
 
     template = 'vm_test_case.xml'
 
+    def archive_logs(self):
+        output = '{work}/output'.format(work=WORKSPACE)
+        root = "/var/lib/vz/private"
+        for log_dir in LOGS:
+            call('sudo cp {logd}/*.log {out}', logd=log_dir, out=output)
+
+        for ctn in os.listdir(root):
+            def copy_file(src, dst):
+                args = {
+                    'path': os.path.join(root, ctn, src),
+                    'output': output,
+                    'dst': dst,
+                    'ctn': ctn
+                }
+                call("sudo cp {path} {output}{dst}-{ctn}.log", **args)
+
+            copy_file("var/log/trove/trove-guestagent.log", "reffy")
+            copy_file("var/log/cdbproxy-agent.log", "virgo")
+
+        call('sudo chmod 777 {out}', out=output)
+
     def clean(self):
         super(VMTestCase, self).clean()
+        self.archive_logs()
         cmd = 'curl -s {clean}?build={build} | {python}'
         call(cmd, clean=CLEAN, build=BUILD_ID, python=TROVE_PYTHON)
         with cd(WORKSPACE):

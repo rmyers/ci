@@ -224,7 +224,7 @@ class VMTestCase(TestCase):
                     'dst': dst,
                     'ctn': ctn
                 }
-                call("sudo cp {path} {output}{dst}-{ctn}.log", **args)
+                call("sudo cp {path} {output}/{dst}-{ctn}.log", **args)
 
             copy_file("var/log/trove/trove-guestagent.log", "reffy")
             copy_file("var/log/cdbproxy-agent.log", "virgo")

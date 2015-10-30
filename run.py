@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
-# curl -s https://raw.githubusercontent.com/rmyers/ci_scripts/master/run.py | python
+# URL=https://raw.githubusercontent.com/rmyers/ci_scripts/master/run.py
+# curl -s $URL | python
 
 import json
 import os
@@ -23,8 +24,6 @@ puts(dict(os.environ))
 
 TOKEN = os.environ.get('GITHUB_TOKEN', 'Unknown')
 GITHUB = 'https://github.rackspace.com/api/v3/repos/Cloud-Database'
-# the clean script on the web
-CLEAN = 'https://raw.githubusercontent.com/rmyers/ci_scripts/master/clean.py'
 TROVE_BIN = '/usr/share/python/trove/bin'
 TROVE_PYTHON = os.path.join(TROVE_BIN, 'python')
 FAB_CMD = os.path.join(TROVE_BIN, 'fab')
@@ -234,8 +233,7 @@ class VMTestCase(TestCase):
     def clean(self):
         super(VMTestCase, self).clean()
         self.archive_logs()
-        cmd = 'curl -s {clean}?build={build} | {python}'
-        call(cmd, clean=CLEAN, build=BUILD_ID, python=TROVE_PYTHON)
+        call('{fab} vm.clear', fab=TROVE_FAB)
         with cd(WORKSPACE):
             # Call clean with trove python
             call('sudo rm -rf lib')
@@ -247,7 +245,7 @@ class VMTestCase(TestCase):
         check_call('sudo ln -s {work} /Cloud-Database', work=WORKSPACE)
         with cd(WORKSPACE):
             check_call('sudo {p} install -e internal/cdb-utils', p=TROVE_PIP)
-        check_call('/usr/local/bin/refresh-puppet')
+        check_call('{fab} vm.clear vm.install', fab=TROVE_FAB)
 
 
 class PullRunner(TestCase):

@@ -233,7 +233,6 @@ class VMTestCase(TestCase):
     def clean(self):
         super(VMTestCase, self).clean()
         self.archive_logs()
-        call('{fab} vm.clear', fab=TROVE_FAB)
         with cd(WORKSPACE):
             # Call clean with trove python
             call('sudo rm -rf lib')

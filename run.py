@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 import sys
 import urllib2
 import pprint
@@ -39,6 +40,7 @@ DEBUG = os.environ.get('DEBUG', 'true') == 'true'
 COMMAND = os.environ.get('COMMAND', 'test')
 HEADERS = {'Authorization': 'token {}'.format(TOKEN)}
 PREFIX = ''
+DEPENDS = re.compile('https://github.rackspace.com/[^/]+/([^/]+)/pull/(\d+)')
 # Mapping of repo to path
 DIRECTORIES = {
     'Cloud-Database': WORKSPACE,
@@ -124,6 +126,23 @@ def update_status(pr, state, job_name=JOB_NAME, build_url=BUILD_URL):
     resp = urllib2.urlopen(request)
 
 
+def fetch_pr(repo=REPO, number=PR_NUMBER):
+    url = '{github}/{repo}/pulls/{number}'.format(
+        github=GITHUB, number=number, repo=repo)
+    request = urllib2.Request(url, headers=HEADERS)
+    resp = urllib2.urlopen(request)
+    pr = json.loads(resp.read())
+    if DEBUG:
+        puts('\n\nPR DATA:\n')
+        puts(pr)
+    return pr
+
+
+def parse_depends(body):
+    for pull in DEPENDS.finditer(body):
+        yield fetch_pr(*pull.groups())
+
+
 class TestCase(object):
 
     template = 'test_case.xml'
@@ -134,17 +153,6 @@ class TestCase(object):
         self.pr = None
         self.xunit = xunit
         self.state = 'pending'
-
-    def fetch_pr(self, repo=REPO, number=PR_NUMBER):
-        url = '{github}/{repo}/pulls/{number}'.format(
-            github=GITHUB, number=number, repo=repo)
-        request = urllib2.Request(url, headers=HEADERS)
-        resp = urllib2.urlopen(request)
-        pr = json.loads(resp.read())
-        if DEBUG:
-            puts('\n\nPR DATA:\n')
-            puts(pr)
-        return pr
 
     def update_submodules(self):
         with cd(WORKSPACE):
@@ -158,7 +166,7 @@ class TestCase(object):
             check_call('git checkout {number}', **pr)
 
     def setup(self):
-        self.pr = self.fetch_pr()
+        self.pr = fetch_pr()
         puts('\n\nPR {number} INFO:\n', **self.pr)
         puts('URL: {html_url}', **self.pr)
         puts('SHA: {sha}', sha=self.pr['head']['sha'])
@@ -167,9 +175,10 @@ class TestCase(object):
         if not self.pr['mergeable']:
             puts('\n\nTHIS PR CANNOT BE MERGED!!!\n\n')
             raise Exception('Pr Not mergeable')
-        # TODO(rmyers): search body for 'DEPENDS ON:' and handle it too
         self.update_submodules()
         self.checkout_pr(self.pr)
+        for pull in parse_depends(self.pr['body']):
+            self.checkout_pr(pull)
 
     def clean(self):
         puts('\nCLEANING UP:\n')

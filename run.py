@@ -195,7 +195,9 @@ class TestCase(object):
             'mysql_51': 'datastore=mysql,version=5.1',
             'mariadb': 'datastore=mariadb,version=10',
             'percona': 'datastore=percona,version=5.6',
-            'default_groups': 'group="rax_stable|rax_replication_groups"'
+            'redis_28': 'datastore=redis,version=2.8.22,group=rax_redis',
+            'redis_30': 'datastore=redis,version=3.0.4,group=rax_redis',
+            'default_groups': 'group="rax_stable|rax_replication_groups"',
         }
         check_call(self.test_cmd, **args)
 
@@ -299,6 +301,12 @@ TESTS = [
     VMTestCase(
         'X-Percona',
         '{fab} {fab_args},{percona},{default_groups}'),
+    VMTestCase(
+        'X-Redis-28',
+        '{fab} {fab_args},{redis_28}'),
+    VMTestCase(
+        'X-Redis-30',
+        '{fab} {fab_args},{redis_30}'),
 ]
 
 

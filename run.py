@@ -284,10 +284,6 @@ TESTS = [
         'X-Docs',
         'tox -edocs -- --xunit-file={workspace}/output/tests.xml'),
     TestCase(
-        'X-Pep8',
-        'tox -epep8',
-        xunit=False),
-    TestCase(
         'X-Usage',
         'tox -eusage',
         xunit=False),

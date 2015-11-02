@@ -307,6 +307,15 @@ TESTS = [
     VMTestCase(
         'X-Redis-30',
         '{fab} {fab_args},{redis_30}'),
+    VMTestCase(
+        'X-HA-MySQL-56',
+        '{fab} {fab_args},{mysql_56},group="rax_ha_mysql"'),
+    VMTestCase(
+        'X-HA-Mariadb',
+        '{fab} {fab_args},{mariadb},group="rax_ha_mysql"'),
+    VMTestCase(
+        'X-HA-Percona',
+        '{fab} {fab_args},{percona},group="rax_ha_mysql"'),
 ]
 
 

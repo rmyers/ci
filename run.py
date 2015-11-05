@@ -224,7 +224,7 @@ class VMTestCase(TestCase):
         output = '{work}/output'.format(work=WORKSPACE)
         root = "/var/lib/vz/private"
         for log_dir in LOGS:
-            call('sudo cp {logd}/*.log {out}', logd=log_dir, out=output)
+            call('sudo su -c "cp {logd}/*.log {out}"', logd=log_dir, out=output)
 
         for ctn in os.listdir(root):
             def copy_file(src, dst):

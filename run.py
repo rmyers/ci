@@ -194,6 +194,7 @@ class TestCase(object):
             'mysql_56': 'datastore=mysql,version=5.6',
             'mysql_51': 'datastore=mysql,version=5.1',
             'mariadb': 'datastore=mariadb,version=10',
+            'mariadb_101': 'datastore=mariadb,version=10.1',
             'percona': 'datastore=percona,version=5.6',
             'redis_28': 'datastore=redis,version=2.8.22,group=rax_redis',
             'redis_30': 'datastore=redis,version=3.0.4,group=rax_redis',
@@ -299,6 +300,9 @@ TESTS = [
         'X-Mariadb',
         '{fab} {fab_args},{mariadb},{default_groups}'),
     VMTestCase(
+        'X-Mariadb-101',
+        '{fab} {fab_args},{mariadb_101},{default_groups}'),
+    VMTestCase(
         'X-Percona',
         '{fab} {fab_args},{percona},{default_groups}'),
     VMTestCase(
@@ -313,6 +317,9 @@ TESTS = [
     VMTestCase(
         'X-HA-Mariadb',
         '{fab} {fab_args},{mariadb},group="rax_ha_mysql"'),
+    VMTestCase(
+        'X-HA-Mariadb-101',
+        '{fab} {fab_args},{mariadb_101},group="rax_ha_mysql"'),
     VMTestCase(
         'X-HA-Percona',
         '{fab} {fab_args},{percona},group="rax_ha_mysql"'),

@@ -45,6 +45,9 @@ DEPENDS = re.compile('https://github.rackspace.com/[^/]+/([^/]+)/pull/(\d+)')
 DIRECTORIES = {
     'Cloud-Database': WORKSPACE,
     'clouddb-puppet-v2': os.path.join(WORKSPACE, 'lib/clouddb-puppet-v2'),
+    'nova': os.path.join(WORKSPACE, 'lib/nova'),
+    'cinder': os.path.join(WORKSPACE, 'lib/cinder'),
+    'glance': os.path.join(WORKSPACE, 'lib/glance'),
 }
 
 # Submodules to update

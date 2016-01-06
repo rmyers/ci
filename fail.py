@@ -4,9 +4,10 @@
 # curl -s $URL | python
 
 import subprocess
+import os
 
-FAB_CMD = '/usr/share/python/trove/bin/fab vm.clear'
-FAB_CLEAN = '{fab} --fabfile=/Cloud-Database/fabfile.py'.format(fab=FAB_CMD)
+WORKSPACE = os.environ['WORKSPACE']
+CLEAN = 'cd {} && sudo chown -R jenkins:jenkins .'.format(WORKSPACE)
 
 if __name__ == "__main__":
-    subprocess.call(FAB_CLEAN, shell=True)
+    subprocess.call(CLEAN, shell=True)

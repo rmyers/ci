@@ -92,18 +92,6 @@ curl -s {{ run }}?build=$BUILD_ID | python</command>
       <healthScaleFactor>1.0</healthScaleFactor>
     </hudson.tasks.junit.JUnitResultArchiver>
     {% endif %}
-    <org.jenkinsci.plugins.postbuildscript.PostBuildScript plugin="postbuildscript@0.17">
-      <buildSteps>
-        <hudson.tasks.Shell>
-          <command>export GITHUB_TOKEN=&apos;{{ token }}&apos;
-export PATH=$PATH:/sbin:/usr/sbin
-curl -s {{ fail }}?build=$BUILD_ID | python</command>
-        </hudson.tasks.Shell>
-      </buildSteps>
-      <scriptOnlyIfSuccess>false</scriptOnlyIfSuccess>
-      <scriptOnlyIfFailure>true</scriptOnlyIfFailure>
-      <markBuildUnstable>true</markBuildUnstable>
-    </org.jenkinsci.plugins.postbuildscript.PostBuildScript>
   </publishers>
   <buildWrappers>
     <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">

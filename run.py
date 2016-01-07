@@ -61,6 +61,8 @@ SUBMODULES = [
     'lib/python-glanceclient',
     'lib/private/python-novaclient',
     'lib/private/secrets',
+    'lib/nova',
+    'lib/cinder',
 ]
 
 # Log file locations

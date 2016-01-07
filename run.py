@@ -25,19 +25,19 @@ puts(dict(os.environ))
 
 TOKEN = os.environ.get('GITHUB_TOKEN', 'Unknown')
 GITHUB = 'https://github.rackspace.com/api/v3/repos/Cloud-Database'
+GIT_COMMIT = os.environ.get('GIT_COMMIT')
 TROVE_BIN = '/usr/share/python/trove/bin'
 TROVE_PYTHON = os.path.join(TROVE_BIN, 'python')
 FAB_CMD = os.path.join(TROVE_BIN, 'fab')
 TROVE_FAB = '{fab} --fabfile=/Cloud-Database/fabfile.py'.format(fab=FAB_CMD)
 TROVE_PIP = os.path.join(TROVE_BIN, 'pip')
-PR_NUMBER = os.environ.get('PR', 'Unknown')
+PR_NUMBER = os.environ.get('PR')
 REPO = os.environ.get('REPO', 'Cloud-Database')
 JOB_NAME = os.environ.get('JOB_NAME', 'Unknown')
 BUILD_URL = os.environ.get('BUILD_URL', 'Unknown')
 BUILD_ID = os.environ.get('BUILD_ID', 'Unknown')
 WORKSPACE = os.environ.get('WORKSPACE', '/tmp')
 DEBUG = os.environ.get('DEBUG', 'true') == 'true'
-COMMAND = os.environ.get('COMMAND', 'test')
 HEADERS = {'Authorization': 'token {}'.format(TOKEN)}
 PREFIX = ''
 DEPENDS = re.compile('https://github.rackspace.com/[^/]+/([^/]+)/pull/(\d+)')
@@ -106,8 +106,14 @@ def check_call(command, **kwargs):
     return subprocess.check_call(cmd, shell=True)
 
 
+def status_url(pr):
+    if pr is None:
+        return os.path.join(GITHUB, 'Cloud-Database', 'statuses', GIT_COMMIT)
+    return pr['statuses_url']
+
+
 def update_status(pr, state, job_name=JOB_NAME, build_url=BUILD_URL):
-    url = pr['statuses_url']
+    url = status_url(pr)
 
     if state == 'pending':
         description = "Stashy says check back later..."
@@ -132,6 +138,8 @@ def update_status(pr, state, job_name=JOB_NAME, build_url=BUILD_URL):
 
 
 def fetch_pr(repo=REPO, number=PR_NUMBER):
+    if number is None:
+        return
     url = '{github}/{repo}/pulls/{number}'.format(
         github=GITHUB, number=number, repo=repo)
     request = urllib2.Request(url, headers=HEADERS)
@@ -168,10 +176,15 @@ class TestCase(object):
         with cd(DIRECTORIES.get(pr['base']['repo']['name'])):
             branch = 'pull/{number}/head:{number}'.format(**pr)
             check_call('git fetch origin {branch} -f'.format(branch=branch))
-            check_call('git checkout {number}', **pr)
+            check_call('git merge {number}', **pr)
 
     def setup(self):
         self.pr = fetch_pr()
+        if self.pr is None:
+            self.update_submodules()
+            puts('\n\nTesting HEAD @ {sha}\n\n', sha=GIT_COMMIT)
+            return
+
         puts('\n\nPR {number} INFO:\n', **self.pr)
         puts('URL: {html_url}', **self.pr)
         puts('SHA: {sha}', sha=self.pr['head']['sha'])

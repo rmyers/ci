@@ -92,6 +92,17 @@ curl -s {{ run }}?build=$BUILD_ID | python</command>
       <healthScaleFactor>1.0</healthScaleFactor>
     </hudson.tasks.junit.JUnitResultArchiver>
     {% endif %}
+    <com.chikli.hudson.plugin.naginator.NaginatorPublisher plugin="naginator@1.16.1">
+      <regexpForRerun></regexpForRerun>
+      <rerunIfUnstable>false</rerunIfUnstable>
+      <rerunMatrixPart>false</rerunMatrixPart>
+      <checkRegexp>false</checkRegexp>
+      <regexpForMatrixParent>false</regexpForMatrixParent>
+      <delay class="com.chikli.hudson.plugin.naginator.FixedDelay">
+        <delay>10</delay>
+      </delay>
+      <maxSchedule>4</maxSchedule>
+    </com.chikli.hudson.plugin.naginator.NaginatorPublisher>
   </publishers>
   <buildWrappers>
     <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">

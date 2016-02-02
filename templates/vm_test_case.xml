@@ -103,6 +103,17 @@ curl -s {{ fail }}?build=$BUILD_ID | python</command>
       <scriptOnlyIfFailure>true</scriptOnlyIfFailure>
       <markBuildUnstable>true</markBuildUnstable>
     </org.jenkinsci.plugins.postbuildscript.PostBuildScript>
+    <com.chikli.hudson.plugin.naginator.NaginatorPublisher plugin="naginator@1.16.1">
+      <regexpForRerun></regexpForRerun>
+      <rerunIfUnstable>false</rerunIfUnstable>
+      <rerunMatrixPart>false</rerunMatrixPart>
+      <checkRegexp>false</checkRegexp>
+      <regexpForMatrixParent>false</regexpForMatrixParent>
+      <delay class="com.chikli.hudson.plugin.naginator.FixedDelay">
+        <delay>10</delay>
+      </delay>
+      <maxSchedule>4</maxSchedule>
+    </com.chikli.hudson.plugin.naginator.NaginatorPublisher>
   </publishers>
   <buildWrappers>
     <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">

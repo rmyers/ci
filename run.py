@@ -170,7 +170,8 @@ class TestCase(object):
     def update_submodules(self):
         with cd(WORKSPACE):
             for sub in SUBMODULES:
-                check_call('git submodule update --init {sub}', sub=sub)
+                check_call(
+                    'git submodule update --depth 1 --init {sub}', sub=sub)
 
     def checkout_pr(self, pr):
         with cd(DIRECTORIES.get(pr['base']['repo']['name'])):

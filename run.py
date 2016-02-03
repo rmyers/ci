@@ -306,7 +306,7 @@ TESTS = [
         'tox -edocs -- --xunit-file={workspace}/output/tests.xml'),
     TestCase(
         'X-Usage',
-        'tox -eusage',
+        'tox -eusage -- --stop',
         xunit=False),
     VMTestCase(
         'X-MySQL-56',

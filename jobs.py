@@ -96,8 +96,9 @@ def main():
     # Default args
     parser.add_argument('--username', default=os.environ.get('JENKINS_USER'),
                         help='username defaults to $JENKINS_USER')
-    parser.add_argument('--password', default=os.environ.get('JENKINS_PASS'),
-                        help='password defaults to $JENKINS_PASS')
+    parser.add_argument('--password',
+                        default=os.environ.get('JENKINS_PASSWORD'),
+                        help='password defaults to $JENKINS_PASSWORD')
     parser.add_argument('--view', default='PRR',
                         help='Jenking view to use (PRR)')
 

@@ -98,8 +98,8 @@ def main():
                         help='username defaults to $JENKINS_USER')
     parser.add_argument('--password', default=os.environ.get('JENKINS_PASS'),
                         help='password defaults to $JENKINS_PASS')
-    parser.add_argument('--view', default='Dev2',
-                        help='Jenking view to use (Dev2)')
+    parser.add_argument('--view', default='PRR',
+                        help='Jenking view to use (PRR)')
 
     # Subcommands
     subparsers = parser.add_subparsers(

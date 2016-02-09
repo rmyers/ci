@@ -341,6 +341,9 @@ TESTS = [
     VMTestCase(
         'X-HA-Percona',
         '{fab} {fab_args},{percona},group="rax_ha_mysql"'),
+    VMTestCase(
+        'X-Puppet-VM',
+        '{fab} {fab_args},{mysql_56},group="dbaas.api.flavors"'),
 ]
 
 

@@ -197,6 +197,7 @@ class TestCase(object):
         self.checkout_pr(self.pr)
         for pull in parse_depends(self.pr['body']):
             self.checkout_pr(pull)
+        update_status(self.pr, state=self.state)
 
     def clean(self):
         puts('\nCLEANING UP:\n')
@@ -223,7 +224,6 @@ class TestCase(object):
     def run(self):
         """Actually run the tests."""
         try:
-            update_status(self.pr, state=self.state)
             self.setup()
             self.run_tests()
             self.state = 'success'

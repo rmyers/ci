@@ -223,8 +223,8 @@ class TestCase(object):
     def run(self):
         """Actually run the tests."""
         try:
-            self.setup()
             update_status(self.pr, state=self.state)
+            self.setup()
             self.run_tests()
             self.state = 'success'
         except:
@@ -343,7 +343,7 @@ TESTS = [
         '{fab} {fab_args},{percona},group="rax_ha_mysql"'),
     VMTestCase(
         'X-Puppet-VM',
-        '{fab} {fab_args},{mysql_56},group="dbaas.api.flavors"'),
+        '{fab} {fab_args},{mysql_56},group="cdbdbaas.api.flavors"'),
 ]
 
 

@@ -11,4 +11,4 @@ CLEAN = 'cd {} && sudo chown -R jenkins:jenkins .'.format(WORKSPACE)
 
 if __name__ == "__main__":
     subprocess.call(CLEAN, shell=True)
-    subprocess.call('sudo reboot')
+    subprocess.call('sudo reboot', shell=True)

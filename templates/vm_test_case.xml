@@ -86,11 +86,13 @@ curl -s {{ run }}?build=$BUILD_ID | python</command>
       <fingerprint>false</fingerprint>
       <defaultExcludes>true</defaultExcludes>
     </hudson.tasks.ArtifactArchiver>
+    {% if test.xunit %}
     <hudson.tasks.junit.JUnitResultArchiver plugin="junit@1.5">
-      <testResults>output/*.xml</testResults>
+      <testResults>output/**.xml</testResults>
       <keepLongStdio>false</keepLongStdio>
       <healthScaleFactor>1.0</healthScaleFactor>
     </hudson.tasks.junit.JUnitResultArchiver>
+    {% endif %}
     <org.jenkinsci.plugins.postbuildscript.PostBuildScript plugin="postbuildscript@0.17">
       <buildSteps>
         <hudson.tasks.Shell>

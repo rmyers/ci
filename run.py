@@ -28,6 +28,7 @@ GITHUB = 'https://github.rackspace.com/api/v3/repos/Cloud-Database'
 GIT_COMMIT = os.environ.get('GIT_COMMIT')
 TROVE_BIN = '/usr/share/python/trove/bin'
 TROVE_PYTHON = os.path.join(TROVE_BIN, 'python')
+TROVE_TESTS = os.path.join(TROVE_BIN, 'trove-tests')
 FAB_CMD = os.path.join(TROVE_BIN, 'fab')
 TROVE_FAB = '{fab} --fabfile=/Cloud-Database/fabfile.py'.format(fab=FAB_CMD)
 TROVE_PIP = os.path.join(TROVE_BIN, 'pip')
@@ -73,6 +74,22 @@ LOGS = [
     '/var/log/cdbproxy',
     '/var/log/cdbproxy-endpoint',
 ]
+
+# Usage is broken on main ci slaves, this hack allows us to run on vm's
+USAGE_TESTS = """{test_cmd} \
+--print-options \
+--app-config-file={workspace}/internal/trove/etc/quick-tests/trove.conf.test \
+--app-config-file={workspace}/internal/trove/etc/quick-tests/usage.conf \
+--in-process-api \
+--usage-tests \
+--test-config-file={workspace}/internal/trove/etc/quick-tests/usage.test.conf \
+--reset-database \
+--group=dbaas.api.mgmt.usage \
+--group=usage.atomhopper \
+--group=usage.manager \
+--group=usage.payload \
+--xunit-file={workspace}/output/tests.xml \
+--stop""".format(test_cmd=TROVE_TESTS, workspace=WORKSPACE)
 
 
 class cd(object):
@@ -305,10 +322,9 @@ TESTS = [
     TestCase(
         'X-Docs',
         'tox -edocs -- --xunit-file={workspace}/output/tests.xml'),
-    TestCase(
+    VMTestCase(
         'X-Usage',
-        'tox -eusage -- --stop',
-        xunit=False),
+        USAGE_TESTS),
     VMTestCase(
         'X-MySQL-56',
         '{fab} {fab_args},{mysql_56},{default_groups}'),

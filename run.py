@@ -344,7 +344,8 @@ TESTS = [
         '{fab} {fab_args},{percona},group="rax_ha_mysql"'),
     VMTestCase(
         'X-Puppet-VM',
-        '{fab} vm.check_services'),
+        '{fab} vm.check_services',
+        xunit=False),
     VMTestCase(
         'X-Monitoring',
         '{fab} {fab_args},{mysql_56},{monitoring}'),

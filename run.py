@@ -218,6 +218,7 @@ class TestCase(object):
             'redis_28': 'datastore=redis,version=2.8.22,group=rax_redis',
             'redis_30': 'datastore=redis,version=3.0.4,group=rax_redis',
             'default_groups': 'group="rax_stable|rax_replication_groups"',
+            'monitoring': 'group="rax.api.mgmt.monitoring"',
         }
         check_call(self.test_cmd, **args)
 
@@ -344,6 +345,9 @@ TESTS = [
     VMTestCase(
         'X-Puppet-VM',
         '{fab} {fab_args},{mysql_56},group="cdbdbaas.api.flavors"'),
+    VMTestCase(
+        'X-Monitoring',
+        '{fab} {fab_args},{mysql_56},{monitoring}'),
 ]
 
 

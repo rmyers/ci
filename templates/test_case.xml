@@ -72,9 +72,11 @@
   <concurrentBuild>true</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>export GITHUB_TOKEN=&apos;{{ token }}&apos;
-export PATH=$PATH:/sbin:/usr/sbin
-curl -s {{ run }}?build=$BUILD_ID | python</command>
+      <command>{{ run|e }}
+
+#
+#
+# Last Modified by {{ username }} on {{ last_modified }}</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>
@@ -108,5 +110,12 @@ curl -s {{ run }}?build=$BUILD_ID | python</command>
     <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">
       <colorMapName>xterm</colorMapName>
     </hudson.plugins.ansicolor.AnsiColorBuildWrapper>
+    <EnvInjectBuildWrapper plugin="envinject@1.92.1">
+      <info>
+        <propertiesContent>PATH=$PATH:/usr/sbin:/sbin
+GITHUB_TOKEN={{ token }}</propertiesContent>
+        <loadFilesFromMaster>false</loadFilesFromMaster>
+      </info>
+    </EnvInjectBuildWrapper>
   </buildWrappers>
 </project>

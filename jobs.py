@@ -3,6 +3,7 @@
 #  (re)Build the Jenkins jobs in dev2
 #
 
+import datetime
 import os
 import sys
 import argparse
@@ -19,8 +20,12 @@ JENKINS_CONFIGS = os.path.join(CURRENT_DIR, 'jobs')
 TEMPLATE_DIR = os.path.join(CURRENT_DIR, 'templates')
 ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
 URL = 'http://cimaster-n01.prod.ord1.clouddb.rackspace.net:8080/'
-RUN = 'https://raw.githubusercontent.com/rmyers/ci_scripts/master/run.py'
-FAIL = 'https://raw.githubusercontent.com/rmyers/ci_scripts/master/fail.py'
+
+
+def contents(filename):
+    file_path = os.path.join(CURRENT_DIR, filename)
+    with open(file_path, 'r') as c:
+        return c.read()
 
 
 def connection(username, password):
@@ -40,10 +45,8 @@ def get_jobs(conn, view):
 
 def store(args):
     conn = connection(args.username, args.password)
-    for job_name in get_jobs(conn, args.view):
-        job_config = conn.get_job_config(job_name)
-        with open(config_filename(job_name), 'w') as config:
-            config.write(job_config)
+    job_config = conn.get_job_config(args.job)
+    print(job_config)
 
 
 def reconfig(args):
@@ -54,11 +57,13 @@ def reconfig(args):
     repos = DIRECTORIES.keys()
     repos.sort()
     context = {
-        'run': RUN,
-        'fail': FAIL,
+        'run': contents('run.py'),
+        'fail': contents('fail.py'),
         'project_list': ','.join([j.name for j in TESTS]),
         'repos': repos,
         'token': args.token,
+        'username': args.username,
+        'last_modified': str(datetime.datetime.now())
     }
     tests = TESTS + [PullRunner(TESTS)]
     for test in tests:
@@ -107,8 +112,13 @@ def main():
         title='commands',
         description='valid subcommands to run on jobs',
         help='"subcommand --help" for help')
+
+    # Store Command
     parser_store = subparsers.add_parser('store')
+    parser_store.add_argument('job', help='Job Name to download')
     parser_store.set_defaults(func=store)
+
+    # Reconfig Command
     parser_reconfig = subparsers.add_parser('reconfig')
     parser_reconfig.add_argument(
         '--token', default=os.environ.get('GITHUB_TOKEN'),

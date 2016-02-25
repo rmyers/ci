@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
-# URL=https://raw.githubusercontent.com/rmyers/ci_scripts/master/fail.py
-# curl -s $URL | python
+# WARNING! This Script is automatically injected by the PR job builder.
+# Any changes made directly in jenkins will be overwritten on the
+# next run of the builder script.
+#
 
 import subprocess
 import os

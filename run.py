@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
-# URL=https://raw.githubusercontent.com/rmyers/ci_scripts/master/run.py
-# curl -s $URL | python
+# WARNING! This Script is automatically injected by the PR job builder.
+# Any changes made directly in jenkins will be overwritten on the
+# next run of the builder script.
+#
 
 import json
 import os
@@ -11,17 +13,6 @@ import urllib2
 import pprint
 import subprocess
 
-
-def puts(line, **kwargs):
-    if isinstance(line, basestring):
-        print(line.format(**kwargs))
-    else:
-        pprint.pprint(line)
-    sys.stdout.flush()
-
-
-puts('\n\nENVIRONMENT:')
-puts(dict(os.environ))
 
 TOKEN = os.environ.get('GITHUB_TOKEN', 'Unknown')
 GITHUB = 'https://github.rackspace.com/api/v3/repos/Cloud-Database'
@@ -90,6 +81,14 @@ USAGE_TESTS = """{test_cmd} \
 --group=usage.payload \
 --xunit-file={workspace}/output/tests.xml \
 --stop""".format(test_cmd=TROVE_TESTS, workspace=WORKSPACE)
+
+
+def puts(line, **kwargs):
+    if isinstance(line, basestring):
+        print(line.format(**kwargs))
+    else:
+        pprint.pprint(line)
+        sys.stdout.flush()
 
 
 class cd(object):
@@ -370,6 +369,9 @@ TESTS = [
 
 if __name__ == '__main__':
     # We are running in a Jenkins Job
+    puts('\n\nENVIRONMENT:')
+    puts(dict(os.environ))
+
     jobs = [PullRunner(TESTS)] + TESTS
     for test in jobs:
         if test.name == JOB_NAME:

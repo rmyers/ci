@@ -88,7 +88,7 @@ def puts(line, **kwargs):
         print(line.format(**kwargs))
     else:
         pprint.pprint(line)
-        sys.stdout.flush()
+    sys.stdout.flush()
 
 
 class cd(object):

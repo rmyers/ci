@@ -282,8 +282,8 @@ class VMTestCase(TestCase):
         self.archive_logs()
         with cd(WORKSPACE):
             # Call clean with trove python
-            call('sudo rm -rf lib')
-            call('sudo rm -rf internal')
+            call('sudo chown jenkins -R *')
+            call('sudo find . -name "*.pyc" -delete')
 
     def setup(self):
         super(VMTestCase, self).setup()

@@ -176,12 +176,14 @@ class TestCase(object):
 
     template = 'test_case.xml'
 
-    def __init__(self, name, test_cmd, xunit=True):
+    def __init__(self, name, test_cmd, xunit=True, template=None):
         self.name = name
         self.test_cmd = test_cmd
         self.pr = None
         self.xunit = xunit
         self.state = 'pending'
+        if template:
+            self.template = template
 
     def update_submodules(self):
         with cd(WORKSPACE):
@@ -314,7 +316,7 @@ class PullRunner(TestCase):
                           build_url=None)
 
 
-TESTS = [
+PR_TESTS = [
     TestCase(
         'X-QuickTests',
         'tox -ecover -- --xunit-file={workspace}/output/tests.xml'),
@@ -366,13 +368,25 @@ TESTS = [
         '{fab} {fab_args},{mysql_56},{monitoring}'),
 ]
 
+# Trunk tests
+TRUNK_TESTS = [
+    TestCase(
+        'Cloud-Databases-QuickTests',
+        'tox -ecover -- --xunit-file={workspace}/output/tests.xml',
+        template='trunk_test_case.xml'),
+    TestCase(
+        'Cloud-Databases-Book',
+        'tox -edocs -- --xunit-file={workspace}/output/tests.xml',
+        template='trunk_test_case.xml'),
+]
+
 
 if __name__ == '__main__':
     # We are running in a Jenkins Job
     puts('\n\nENVIRONMENT:')
     puts(dict(os.environ))
 
-    jobs = [PullRunner(TESTS)] + TESTS
+    jobs = [PullRunner(PR_TESTS)] + PR_TESTS + TRUNK_TESTS
     for test in jobs:
         if test.name == JOB_NAME:
             test.run()

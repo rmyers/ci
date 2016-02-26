@@ -1,7 +1,10 @@
 # Jobs folder
 
-Just a place to store jobs. Don't actually commit anything here. Just useful for debugging.
+Just a place to store jobs. You can use these to test your changes before
+uploading to jenkins. After you make a change simply run:
 
-Run the 'store' command to get the existing jobs:
+    python jobs.py reconfig --dry
 
-    python jobs.py store
+This will render the configs and you can see the changes in git diff.
+Please remember to commit these changes with your job changes so we can
+see the changes over time.

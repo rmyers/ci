@@ -9,11 +9,14 @@ import sys
 import argparse
 import getpass
 import xml.etree.ElementTree as ET
+
 import jinja2
 from jenkins import Jenkins
-from run import TESTS
-from run import PullRunner
+
 from run import DIRECTORIES
+from run import PR_TESTS
+from run import PullRunner
+from run import TRUNK_TESTS
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 JENKINS_CONFIGS = os.path.join(CURRENT_DIR, 'jobs')
@@ -59,20 +62,20 @@ def reconfig(args):
     context = {
         'run': contents('run.py'),
         'fail': contents('fail.py'),
-        'project_list': ','.join([j.name for j in TESTS]),
+        'project_list': ','.join([j.name for j in PR_TESTS]),
         'repos': repos,
         'token': args.token,
         'username': args.username,
         'last_modified': str(datetime.datetime.now())
     }
-    tests = TESTS + [PullRunner(TESTS)]
+    tests = TRUNK_TESTS + PR_TESTS + [PullRunner(PR_TESTS)]
     for test in tests:
         template = ENV.get_template(test.template)
         config = template.render(test=test, **context)
-        if args.dry:
-            with open(config_filename(test.name), 'w') as conf:
-                conf.write(config)
-        else:
+        with open(config_filename(test.name), 'w') as conf:
+            conf.write(config)
+
+        if not args.dry:
             try:
                 conn.reconfig_job(test.name, config)
             except:

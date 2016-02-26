@@ -1,0 +1,541 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>Testing the Dev2</description>
+  <logRotator class="hudson.tasks.LogRotator">
+    <daysToKeep>30</daysToKeep>
+    <numToKeep>60</numToKeep>
+    <artifactDaysToKeep>-1</artifactDaysToKeep>
+    <artifactNumToKeep>-1</artifactNumToKeep>
+  </logRotator>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>REPO</name>
+          <description></description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              
+              <string>Cloud-Database</string>
+              
+              <string>cinder</string>
+              
+              <string>clouddb-puppet-v2</string>
+              
+              <string>glance</string>
+              
+              <string>nova</string>
+              
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>PR</name>
+          <description></description>
+          <defaultValue></defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>DEBUG</name>
+          <description></description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <com.sonyericsson.rebuild.RebuildSettings plugin="rebuild@1.22">
+      <autoRebuild>false</autoRebuild>
+    </com.sonyericsson.rebuild.RebuildSettings>
+    <hudson.plugins.disk__usage.DiskUsageProperty plugin="disk-usage@0.25"/>
+  </properties>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@2.3.5">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>git@github.rackspace.com:Cloud-Database/Cloud-Database.git</url>
+        <credentialsId>651f0e56-d521-4f42-b0d8-400458fd636a</credentialsId>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>testing</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions>
+      <hudson.plugins.git.extensions.impl.WipeWorkspace/>
+      <hudson.plugins.git.extensions.impl.SubmoduleOption>
+        <disableSubmodules>true</disableSubmodules>
+        <recursiveSubmodules>false</recursiveSubmodules>
+        <trackingSubmodules>false</trackingSubmodules>
+      </hudson.plugins.git.extensions.impl.SubmoduleOption>
+    </extensions>
+  </scm>
+  <assignedNode>DEV2-SLAVE</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>true</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>#!/usr/bin/env python
+#
+# WARNING! This Script is automatically injected by the PR job builder.
+# Any changes made directly in jenkins will be overwritten on the
+# next run of the builder script.
+#
+
+import json
+import os
+import re
+import sys
+import urllib2
+import pprint
+import subprocess
+
+
+TOKEN = os.environ.get(&#39;GITHUB_TOKEN&#39;, &#39;Unknown&#39;)
+GITHUB = &#39;https://github.rackspace.com/api/v3/repos/Cloud-Database&#39;
+GIT_COMMIT = os.environ.get(&#39;GIT_COMMIT&#39;)
+TROVE_BIN = &#39;/usr/share/python/trove/bin&#39;
+TROVE_PYTHON = os.path.join(TROVE_BIN, &#39;python&#39;)
+TROVE_TESTS = os.path.join(TROVE_BIN, &#39;trove-tests&#39;)
+FAB_CMD = os.path.join(TROVE_BIN, &#39;fab&#39;)
+TROVE_FAB = &#39;{fab} --fabfile=/Cloud-Database/fabfile.py&#39;.format(fab=FAB_CMD)
+TROVE_PIP = os.path.join(TROVE_BIN, &#39;pip&#39;)
+PR_NUMBER = os.environ.get(&#39;PR&#39;)
+REPO = os.environ.get(&#39;REPO&#39;, &#39;Cloud-Database&#39;)
+JOB_NAME = os.environ.get(&#39;JOB_NAME&#39;, &#39;Unknown&#39;)
+BUILD_URL = os.environ.get(&#39;BUILD_URL&#39;, &#39;Unknown&#39;)
+BUILD_ID = os.environ.get(&#39;BUILD_ID&#39;, &#39;Unknown&#39;)
+WORKSPACE = os.environ.get(&#39;WORKSPACE&#39;, &#39;/tmp&#39;)
+DEBUG = os.environ.get(&#39;DEBUG&#39;, &#39;true&#39;) == &#39;true&#39;
+HEADERS = {&#39;Authorization&#39;: &#39;token {}&#39;.format(TOKEN)}
+PREFIX = &#39;&#39;
+DEPENDS = re.compile(&#39;https://github.rackspace.com/[^/]+/([^/]+)/pull/(\d+)&#39;)
+# Mapping of repo to path
+DIRECTORIES = {
+    &#39;Cloud-Database&#39;: WORKSPACE,
+    &#39;clouddb-puppet-v2&#39;: os.path.join(WORKSPACE, &#39;lib/clouddb-puppet-v2&#39;),
+    &#39;nova&#39;: os.path.join(WORKSPACE, &#39;lib/nova&#39;),
+    &#39;cinder&#39;: os.path.join(WORKSPACE, &#39;lib/cinder&#39;),
+    &#39;glance&#39;: os.path.join(WORKSPACE, &#39;lib/glance&#39;),
+}
+
+# Submodules to update
+SUBMODULES = [
+    &#39;lib/clouddb-puppet-v2&#39;,
+    &#39;lib/rackspace-monitoring&#39;,
+    &#39;lib/python-cloudlb&#39;,
+    &#39;lib/python-cinderclient&#39;,
+    &#39;lib/python-swiftclient&#39;,
+    &#39;lib/python-keystoneclient&#39;,
+    &#39;lib/python-glanceclient&#39;,
+    &#39;lib/private/python-novaclient&#39;,
+    &#39;lib/private/secrets&#39;,
+    &#39;lib/nova&#39;,
+    &#39;lib/cinder&#39;,
+]
+
+# Log file locations
+LOGS = [
+    &#39;/var/log/trove&#39;,
+    &#39;/var/log/nova&#39;,
+    &#39;/var/log/cinder&#39;,
+    &#39;/var/log/cdbproxy&#39;,
+    &#39;/var/log/cdbproxy-endpoint&#39;,
+]
+
+# Usage is broken on main ci slaves, this hack allows us to run on vm&#39;s
+USAGE_TESTS = &#34;&#34;&#34;{test_cmd} \
+--print-options \
+--app-config-file={workspace}/internal/trove/etc/quick-tests/trove.conf.test \
+--app-config-file={workspace}/internal/trove/etc/quick-tests/usage.conf \
+--in-process-api \
+--usage-tests \
+--test-config-file={workspace}/internal/trove/etc/quick-tests/usage.test.conf \
+--reset-database \
+--group=dbaas.api.mgmt.usage \
+--group=usage.atomhopper \
+--group=usage.manager \
+--group=usage.payload \
+--xunit-file={workspace}/output/tests.xml \
+--stop&#34;&#34;&#34;.format(test_cmd=TROVE_TESTS, workspace=WORKSPACE)
+
+
+def puts(line, **kwargs):
+    if isinstance(line, basestring):
+        print(line.format(**kwargs))
+    else:
+        pprint.pprint(line)
+    sys.stdout.flush()
+
+
+class cd(object):
+    &#34;&#34;&#34;Run commands in a different directory.&#34;&#34;&#34;
+
+    def __init__(self, path):
+        global PREFIX
+        self.original = PREFIX
+        self.path = path
+
+    def __enter__(self, *args, **kwargs):
+        global PREFIX
+        PREFIX = &#39;cd {path} &amp;&amp; &#39;.format(path=self.path)
+
+    def __exit__(self, *args, **kwargs):
+        global PREFIX
+        PREFIX = self.original
+
+
+def call(command, **kwargs):
+    command = command.format(**kwargs)
+    cmd = &#39;{prefix}{command}&#39;.format(prefix=PREFIX, command=command)
+    puts(cmd)
+    return subprocess.call(cmd, shell=True)
+
+
+def check_call(command, **kwargs):
+    command = command.format(**kwargs)
+    cmd = &#39;{prefix}{command}&#39;.format(prefix=PREFIX, command=command)
+    puts(cmd)
+    return subprocess.check_call(cmd, shell=True)
+
+
+def status_url(pr):
+    if pr is None:
+        return os.path.join(GITHUB, &#39;Cloud-Database&#39;, &#39;statuses&#39;, GIT_COMMIT)
+    return pr[&#39;statuses_url&#39;]
+
+
+def update_status(pr, state, job_name=JOB_NAME, build_url=BUILD_URL):
+    url = status_url(pr)
+
+    if state == &#39;pending&#39;:
+        description = &#34;Stashy says check back later...&#34;
+    elif state == &#39;success&#39;:
+        description = &#34;Stashy says you are golden!&#34;
+    elif state == &#39;failure&#39;:
+        description = &#34;Stashy says better luck next time :(&#34;
+
+    data = {
+        &#39;state&#39;: state,
+        &#39;description&#39;: description,
+        &#39;context&#39;: job_name,
+        &#39;target_url&#39;: build_url,
+    }
+    if DEBUG:
+        puts(data)
+
+    puts(&#39;\nSetting test state to: {state}\n&#39;, state=state)
+    request = urllib2.Request(url, headers=HEADERS)
+    request.add_data(json.dumps(data))
+    resp = urllib2.urlopen(request)
+
+
+def fetch_pr(repo=REPO, number=PR_NUMBER):
+    if number is None:
+        return
+    url = &#39;{github}/{repo}/pulls/{number}&#39;.format(
+        github=GITHUB, number=number, repo=repo)
+    request = urllib2.Request(url, headers=HEADERS)
+    resp = urllib2.urlopen(request)
+    pr = json.loads(resp.read())
+    if DEBUG:
+        puts(&#39;\n\nPR DATA:\n&#39;)
+        puts(pr)
+    return pr
+
+
+def parse_depends(body):
+    for pull in DEPENDS.finditer(body):
+        yield fetch_pr(*pull.groups())
+
+
+class TestCase(object):
+
+    template = &#39;test_case.xml&#39;
+
+    def __init__(self, name, test_cmd, xunit=True, template=None):
+        self.name = name
+        self.test_cmd = test_cmd
+        self.pr = None
+        self.xunit = xunit
+        self.state = &#39;pending&#39;
+        if template:
+            self.template = template
+
+    def update_submodules(self):
+        with cd(WORKSPACE):
+            for sub in SUBMODULES:
+                check_call(&#39;git submodule update --init {sub}&#39;, sub=sub)
+
+    def checkout_pr(self, pr):
+        with cd(DIRECTORIES.get(pr[&#39;base&#39;][&#39;repo&#39;][&#39;name&#39;])):
+            branch = &#39;pull/{number}/head:{number}&#39;.format(**pr)
+            check_call(&#39;git fetch origin {branch} -f&#39;.format(branch=branch))
+            check_call(&#39;git merge {number}&#39;, **pr)
+
+    def setup(self):
+        self.pr = fetch_pr()
+        if self.pr is None:
+            self.update_submodules()
+            puts(&#39;\n\nTesting HEAD @ {sha}\n\n&#39;, sha=GIT_COMMIT)
+            return
+
+        puts(&#39;\n\nPR {number} INFO:\n&#39;, **self.pr)
+        puts(&#39;URL: {html_url}&#39;, **self.pr)
+        puts(&#39;SHA: {sha}&#39;, sha=self.pr[&#39;head&#39;][&#39;sha&#39;])
+        puts(&#39;TITLE: {title}&#39;, **self.pr)
+        puts(&#39;INFO: \n{body}\n&#39;, **self.pr)
+        if not self.pr[&#39;mergeable&#39;]:
+            puts(&#39;\n\nTHIS PR CANNOT BE MERGED!!!\n\n&#39;)
+            raise Exception(&#39;Pr Not mergeable&#39;)
+        self.update_submodules()
+        self.checkout_pr(self.pr)
+        for pull in parse_depends(self.pr[&#39;body&#39;]):
+            self.checkout_pr(pull)
+        update_status(self.pr, state=self.state)
+
+    def clean(self):
+        puts(&#39;\nCLEANING UP:\n&#39;)
+
+    def run_tests(self):
+        args = {
+            &#39;fab&#39;: TROVE_FAB,
+            &#39;pip&#39;: TROVE_PIP,
+            &#39;python&#39;: TROVE_PYTHON,
+            &#39;bin&#39;: TROVE_BIN,
+            &#39;workspace&#39;: WORKSPACE,
+            &#39;fab_args&#39;: &#39;tests:stop=True,white_box=True,with_xunit=True&#39;,
+            &#39;mysql_56&#39;: &#39;datastore=mysql,version=5.6&#39;,
+            &#39;mysql_51&#39;: &#39;datastore=mysql,version=5.1&#39;,
+            &#39;mariadb&#39;: &#39;datastore=mariadb,version=10&#39;,
+            &#39;mariadb_101&#39;: &#39;datastore=mariadb,version=10.1&#39;,
+            &#39;percona&#39;: &#39;datastore=percona,version=5.6&#39;,
+            &#39;redis_28&#39;: &#39;datastore=redis,version=2.8.22,group=rax_redis&#39;,
+            &#39;redis_30&#39;: &#39;datastore=redis,version=3.0.4,group=rax_redis&#39;,
+            &#39;default_groups&#39;: &#39;group=&#34;rax_stable|rax_replication_groups&#34;&#39;,
+            &#39;monitoring&#39;: &#39;group=&#34;rax.api.mgmt.monitoring&#34;&#39;,
+        }
+        check_call(self.test_cmd, **args)
+
+    def run(self):
+        &#34;&#34;&#34;Actually run the tests.&#34;&#34;&#34;
+        try:
+            self.setup()
+            self.run_tests()
+            self.state = &#39;success&#39;
+        except:
+            self.state = &#39;failure&#39;
+            raise
+        finally:
+            update_status(self.pr, state=self.state)
+            self.clean()
+
+
+class VMTestCase(TestCase):
+
+    template = &#39;vm_test_case.xml&#39;
+
+    def archive_logs(self):
+        output = &#39;{work}/output&#39;.format(work=WORKSPACE)
+        root = &#34;/var/lib/vz/private&#34;
+        for log_dir in LOGS:
+            call(&#39;sudo su -c &#34;cp {d}/*.log {out}&#34;&#39;, d=log_dir, out=output)
+
+        for ctn in os.listdir(root):
+            def copy_file(src, dst):
+                args = {
+                    &#39;path&#39;: os.path.join(root, ctn, src),
+                    &#39;output&#39;: output,
+                    &#39;dst&#39;: dst,
+                    &#39;ctn&#39;: ctn
+                }
+                call(&#34;sudo cp {path} {output}/{dst}-{ctn}.log&#34;, **args)
+
+            copy_file(&#34;var/log/trove/trove-guestagent.log&#34;, &#34;reffy&#34;)
+            copy_file(&#34;var/log/cdbproxy-agent.log&#34;, &#34;virgo&#34;)
+
+        call(&#39;sudo chmod 777 {out}&#39;, out=output)
+
+    def clean(self):
+        super(VMTestCase, self).clean()
+        self.archive_logs()
+        with cd(WORKSPACE):
+            # Call clean with trove python
+            call(&#39;sudo chown jenkins -R *&#39;)
+            call(&#39;sudo find . -name &#34;*.pyc&#34; -delete&#39;)
+
+    def setup(self):
+        super(VMTestCase, self).setup()
+        check_call(&#39;sudo rm -rf /Cloud-Database&#39;)
+        check_call(&#39;sudo ln -s {work} /Cloud-Database&#39;, work=WORKSPACE)
+        with cd(WORKSPACE):
+            check_call(&#39;sudo {p} install -e internal/cdb-utils&#39;, p=TROVE_PIP)
+        check_call(&#39;{fab} vm.clear vm.install&#39;, fab=TROVE_FAB)
+
+
+class PullRunner(TestCase):
+
+    template = &#39;pull_runner.xml&#39;
+
+    def __init__(self, tests):
+        self.name = &#39;PR_Run&#39;
+        self.tests = tests
+        self.test_cmd = &#39;&#39;
+        self.pr = None
+        self.state = &#39;pending&#39;
+
+    def run_tests(self):
+        # Mark all the jobs as pending with no url
+        for test in self.tests:
+            update_status(self.pr,
+                          state=&#39;pending&#39;,
+                          job_name=test.name,
+                          build_url=None)
+
+
+PR_TESTS = [
+    TestCase(
+        &#39;X-QuickTests&#39;,
+        &#39;tox -ecover -- --xunit-file={workspace}/output/tests.xml&#39;),
+    TestCase(
+        &#39;X-Docs&#39;,
+        &#39;tox -edocs -- --xunit-file={workspace}/output/tests.xml&#39;),
+    VMTestCase(
+        &#39;X-Usage&#39;,
+        USAGE_TESTS),
+    VMTestCase(
+        &#39;X-MySQL-56&#39;,
+        &#39;{fab} {fab_args},{mysql_56},{default_groups}&#39;),
+    VMTestCase(
+        &#39;X-MySQL-51&#39;,
+        &#39;{fab} {fab_args},{mysql_51},group=&#34;rax_stable&#34;&#39;),
+    VMTestCase(
+        &#39;X-Mariadb&#39;,
+        &#39;{fab} {fab_args},{mariadb},{default_groups}&#39;),
+    VMTestCase(
+        &#39;X-Mariadb-101&#39;,
+        &#39;{fab} {fab_args},{mariadb_101},{default_groups}&#39;),
+    VMTestCase(
+        &#39;X-Percona&#39;,
+        &#39;{fab} {fab_args},{percona},{default_groups}&#39;),
+    VMTestCase(
+        &#39;X-Redis-28&#39;,
+        &#39;{fab} {fab_args},{redis_28}&#39;),
+    VMTestCase(
+        &#39;X-Redis-30&#39;,
+        &#39;{fab} {fab_args},{redis_30}&#39;),
+    VMTestCase(
+        &#39;X-HA-MySQL-56&#39;,
+        &#39;{fab} {fab_args},{mysql_56},group=&#34;rax_ha_mysql&#34;&#39;),
+    VMTestCase(
+        &#39;X-HA-Mariadb&#39;,
+        &#39;{fab} {fab_args},{mariadb},group=&#34;rax_ha_mysql&#34;&#39;),
+    VMTestCase(
+        &#39;X-HA-Mariadb-101&#39;,
+        &#39;{fab} {fab_args},{mariadb_101},group=&#34;rax_ha_mysql&#34;&#39;),
+    VMTestCase(
+        &#39;X-HA-Percona&#39;,
+        &#39;{fab} {fab_args},{percona},group=&#34;rax_ha_mysql&#34;&#39;),
+    VMTestCase(
+        &#39;X-Puppet-VM&#39;,
+        &#39;{fab} vm.check_services&#39;,
+        xunit=False),
+    VMTestCase(
+        &#39;X-Monitoring&#39;,
+        &#39;{fab} {fab_args},{mysql_56},{monitoring}&#39;),
+]
+
+# Trunk tests
+TRUNK_TESTS = [
+    TestCase(
+        &#39;Cloud-Databases-QuickTests&#39;,
+        &#39;tox -ecover -- --xunit-file={workspace}/output/tests.xml&#39;,
+        template=&#39;trunk_test_case.xml&#39;),
+    TestCase(
+        &#39;Cloud-Databases-Book&#39;,
+        &#39;tox -edocs -- --xunit-file={workspace}/output/tests.xml&#39;,
+        template=&#39;trunk_test_case.xml&#39;),
+]
+
+
+if __name__ == &#39;__main__&#39;:
+    # We are running in a Jenkins Job
+    puts(&#39;\n\nENVIRONMENT:&#39;)
+    puts(dict(os.environ))
+
+    jobs = [PullRunner(PR_TESTS)] + PR_TESTS + TRUNK_TESTS
+    for test in jobs:
+        if test.name == JOB_NAME:
+            test.run()
+
+
+#
+#
+# Last Modified by robe5515 on 2016-02-26 12:14:15.317878</command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <hudson.tasks.ArtifactArchiver>
+      <artifacts>output/**</artifacts>
+      <allowEmptyArchive>false</allowEmptyArchive>
+      <onlyIfSuccessful>false</onlyIfSuccessful>
+      <fingerprint>false</fingerprint>
+      <defaultExcludes>true</defaultExcludes>
+    </hudson.tasks.ArtifactArchiver>
+    
+    <org.jenkinsci.plugins.postbuildscript.PostBuildScript plugin="postbuildscript@0.17">
+      <buildSteps>
+        <hudson.tasks.Shell>
+          <command>#!/usr/bin/env python
+#
+# WARNING! This Script is automatically injected by the PR job builder.
+# Any changes made directly in jenkins will be overwritten on the
+# next run of the builder script.
+#
+
+import subprocess
+import os
+
+WORKSPACE = os.environ[&#39;WORKSPACE&#39;]
+CLEAN = &#39;cd {} &amp;&amp; sudo chown -R jenkins:jenkins .&#39;.format(WORKSPACE)
+
+if __name__ == &#34;__main__&#34;:
+    subprocess.call(CLEAN, shell=True)
+</command>
+        </hudson.tasks.Shell>
+      </buildSteps>
+      <scriptOnlyIfSuccess>false</scriptOnlyIfSuccess>
+      <scriptOnlyIfFailure>true</scriptOnlyIfFailure>
+      <markBuildUnstable>true</markBuildUnstable>
+    </org.jenkinsci.plugins.postbuildscript.PostBuildScript>
+    <com.chikli.hudson.plugin.naginator.NaginatorPublisher plugin="naginator@1.16.1">
+      <regexpForRerun></regexpForRerun>
+      <rerunIfUnstable>false</rerunIfUnstable>
+      <rerunMatrixPart>false</rerunMatrixPart>
+      <checkRegexp>false</checkRegexp>
+      <regexpForMatrixParent>false</regexpForMatrixParent>
+      <delay class="com.chikli.hudson.plugin.naginator.FixedDelay">
+        <delay>10</delay>
+      </delay>
+      <maxSchedule>4</maxSchedule>
+    </com.chikli.hudson.plugin.naginator.NaginatorPublisher>
+  </publishers>
+  <buildWrappers>
+    <hudson.plugins.ansicolor.AnsiColorBuildWrapper plugin="ansicolor@0.4.1">
+      <colorMapName>xterm</colorMapName>
+    </hudson.plugins.ansicolor.AnsiColorBuildWrapper>
+    <EnvInjectBuildWrapper plugin="envinject@1.92.1">
+      <info>
+        <propertiesContent>PATH=$PATH:/usr/sbin:/sbin
+GITHUB_TOKEN=1f34b270ee1c25554e81fc095795bfc750ca0d7c</propertiesContent>
+        <loadFilesFromMaster>false</loadFilesFromMaster>
+      </info>
+    </EnvInjectBuildWrapper>
+  </buildWrappers>
+</project>
